@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Typing Master — Admin Panel</title>
+<style>
+  :root {
+    --bg:#0d0f14;--card:#161921;--surface2:#1e2330;--border:#252a35;
+    --accent:#7c6af7;--accent2:#4ecdc4;--red:#ff6b6b;--yellow:#ffd166;
+    --text:#e8eaf0;--muted:#8892a4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh;}
+
+  /* LOGIN */
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;
+    background:radial-gradient(ellipse at 20% 20%,rgba(124,106,247,0.12),transparent 60%),
+               radial-gradient(ellipse at 80% 80%,rgba(78,205,196,0.08),transparent 60%);}
+  .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;
+    padding:2.5rem 2rem;width:360px;text-align:center;}
+  .login-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1.5rem;}
+  .login-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+  .login-logo h1{font-size:1.3rem;font-weight:700;}
+  .login-logo h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .shield-icon{font-size:2.5rem;margin-bottom:0.8rem;}
+  .login-card h2{font-size:1.2rem;font-weight:600;margin-bottom:0.3rem;}
+  .login-card p{color:var(--muted);font-size:0.82rem;margin-bottom:1.8rem;}
+  .login-card input{width:100%;padding:0.75rem 1rem;margin-bottom:0.9rem;
+    background:var(--bg);border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-size:0.92rem;outline:none;}
+  .login-card input:focus{border-color:var(--accent);}
+  .login-btn{width:100%;padding:0.8rem;background:linear-gradient(135deg,var(--accent),#9b8cf9);
+    border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;transition:opacity .2s;}
+  .login-btn:hover{opacity:.85;}
+  #login-error{color:var(--red);font-size:.83rem;margin-top:0.8rem;min-height:1.2rem;}
+
+  /* LAYOUT */
+  #app{display:none;flex-direction:column;min-height:100vh;}
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);
+    padding:14px 28px;display:flex;align-items:center;gap:12px;}
+  .topbar-logo{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:700;}
+  .topbar-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.9rem;}
+  .topbar-logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .badge-admin{background:rgba(124,106,247,0.15);border:1px solid rgba(124,106,247,0.35);
+    color:var(--accent);padding:3px 10px;border-radius:100px;font-size:.75rem;font-weight:600;}
+  .spacer{flex:1;}
+  .logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:6px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;transition:all .2s;}
+  .logout-btn:hover{border-color:var(--red);color:var(--red);}
+  .main{display:flex;flex:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:200px;background:var(--card);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;}
+  .sidebar a{display:block;padding:10px 20px;color:var(--muted);text-decoration:none;
+    font-size:.85rem;cursor:pointer;transition:all .15s;}
+  .sidebar a.active,.sidebar a:hover{color:var(--accent);background:rgba(124,106,247,.08);}
+
+  /* CONTENT */
+  .content{flex:1;padding:24px;overflow-y:auto;}
+  section{display:none;}
+  section.active{display:block;}
+
+  /* STATS GRID */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+  .stat-num{font-size:1.8rem;font-weight:700;color:var(--accent);}
+  .stat-num.g{color:var(--accent2);}
+  .stat-num.y{color:var(--yellow);}
+  .stat-num.r{color:var(--red);}
+  .stat-label{font-size:.74rem;color:var(--muted);margin-top:4px;}
+
+  /* LEVEL BARS */
+  .level-chart{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:24px;}
+  .level-chart h3{font-size:.95rem;font-weight:600;color:var(--muted);margin-bottom:14px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:.82rem;}
+  .bar-row .bl{width:54px;color:var(--muted);}
+  .bar-track{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .8s ease;}
+  .bar-count{width:30px;text-align:right;color:var(--muted);}
+
+  /* TABS */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;}
+  .tab-btn{padding:7px 16px;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;color:var(--muted);font-size:.85rem;cursor:pointer;transition:all .2s;}
+  .tab-btn.active{background:rgba(124,106,247,.15);border-color:var(--accent);color:var(--accent);}
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* SEARCH */
+  .search-bar{margin-bottom:12px;}
+  .search-bar input{width:100%;padding:8px 14px;background:var(--card);
+    border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;outline:none;}
+  .search-bar input:focus{border-color:var(--accent);}
+
+  /* TABLE */
+  .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:.84rem;}
+  thead{background:var(--surface2);}
+  th{padding:10px 14px;text-align:left;font-size:.75rem;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.05em;}
+  td{padding:9px 14px;border-top:1px solid var(--border);}
+  tr:hover td{background:var(--surface2);}
+
+  .pill{display:inline-block;padding:2px 9px;border-radius:100px;font-size:.73rem;font-weight:600;}
+  .pill-a{background:rgba(78,205,196,.15);color:var(--accent2);}
+  .pill-y{background:rgba(255,209,102,.15);color:var(--yellow);}
+
+  .btn-sm{padding:4px 10px;border-radius:6px;font-size:.75rem;cursor:pointer;
+    border:1px solid;background:transparent;margin-right:3px;transition:all .2s;}
+  .btn-d{border-color:rgba(255,107,107,.4);color:var(--red);}
+  .btn-d:hover{background:rgba(255,107,107,.12);}
+  .btn-w{border-color:rgba(255,209,102,.4);color:var(--yellow);}
+  .btn-w:hover{background:rgba(255,209,102,.12);}
+
+  .loading{text-align:center;padding:2rem;color:var(--muted);font-size:.88rem;}
+  .empty{text-align:center;padding:3rem;color:var(--muted);}
+
+  .section-title{font-size:1.05rem;font-weight:600;margin-bottom:16px;}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+    z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:18px;
+    width:100%;max-width:480px;padding:24px;}
+  .modal h3{font-size:1rem;font-weight:600;margin-bottom:16px;}
+  .modal input{width:100%;padding:9px 12px;background:var(--bg);
+    border:1px solid var(--border);border-radius:8px;color:var(--text);
+    font-size:.88rem;outline:none;margin-bottom:12px;}
+  .modal input:focus{border-color:var(--accent);}
+  .modal-btns{display:flex;gap:8px;}
+  .modal-btn{flex:1;padding:9px;border:none;border-radius:8px;
+    font-size:.85rem;font-weight:600;cursor:pointer;transition:opacity .2s;}
+  .modal-btn:hover{opacity:.85;}
+  .modal-btn.primary{background:linear-gradient(135deg,var(--accent),#9b8cf9);color:#fff;}
+  .modal-btn.cancel{background:var(--surface2);color:var(--muted);}
+  .modal-close{float:right;background:none;border:none;color:var(--muted);
+    font-size:1.2rem;cursor:pointer;}
+  .modal-close:hover{color:var(--red);}
+  .modal-notice{font-size:.82rem;padding:8px 12px;border-radius:8px;margin-top:8px;}
+  .notice-ok{background:rgba(78,205,196,.12);color:var(--accent2);border:1px solid rgba(78,205,196,.3);}
+  .notice-err{background:rgba(255,107,107,.12);color:var(--red);border:1px solid rgba(255,107,107,.3);}
+
+  .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--card);
+    border:1px solid var(--border);border-radius:12px;padding:10px 16px;
+    font-size:.85rem;z-index:999;opacity:0;transform:translateY(10px);
+    transition:all .3s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast.ok{border-color:var(--accent2);color:var(--accent2);}
+  .toast.err{border-color:var(--red);color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">⌨️</div>
+      <h1>Typing <span>Master</span></h1>
+    </div>
+    <div class="shield-icon">🛡️</div>
+    <h2>Admin Panel</h2>
+    <p>Authorized Access Only</p>
+    <input type="text"     id="adm-user" placeholder="Username" />
+    <input type="password" id="adm-pass" placeholder="Password" />
+    <button class="login-btn" onclick="adminLogin()">Login →</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">⌨️</div>
+      Typing <span>Master</span> &nbsp;Admin
+    </div>
+    <span class="badge-admin">🛡️ Admin</span>
+    <div class="spacer"></div>
+    <span id="topbar-user" style="color:var(--muted);font-size:.8rem;"></span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <a onclick="showSec('dashboard')" id="nav-dashboard" class="active">📊 Dashboard</a>
+      <a onclick="showSec('users')"     id="nav-users">👥 Users</a>
+      <a onclick="showSec('results')"   id="nav-results">📋 Results</a>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <section id="sec-dashboard" class="active">
+        <div class="section-title">📊 Dashboard Overview</div>
+        <div class="stats-grid" id="stats-grid"><div class="loading">Loading…</div></div>
+        <div class="level-chart">
+          <h3>Level Completion Count</h3>
+          <div id="level-bars"><div class="loading">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section id="sec-users">
+        <div class="section-title">👥 All Users</div>
+        <div class="search-bar">
+          <input type="text" id="user-search" placeholder="🔍 Naam ya email se dhundo…" oninput="filterUsers()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Name</th><th>Email</th><th>Password</th>
+              <th>Joined</th><th>Tests</th><th>Best WPM</th><th>Levels</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="sec-results">
+        <div class="section-title">📋 All Results</div>
+        <div class="search-bar">
+          <input type="text" id="result-search" placeholder="🔍 Naam ya email se dhundo…" oninput="filterResults()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>User</th><th>Level</th><th>WPM</th><th>Accuracy</th>
+              <th>Correct</th><th>Wrong</th><th>Time</th><th>Date</th>
+            </tr></thead>
+            <tbody id="results-tbody"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3>🔑 Password Reset</h3>
+    <p style="color:var(--muted);font-size:.83rem;margin-bottom:12px" id="reset-modal-name"></p>
+    <input type="text" id="reset-pw-input" placeholder="Naya password likhein…"/>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="doResetPw()">Reset Password</button>
+    </div>
+    <div id="reset-modal-notice" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let adminToken = '';
+let allUsers   = [];
+let allResults = [];
+let resetTargetId = '';
+
+function authH() {
+  return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + adminToken };
+}
+
+/* ── LOGIN ── */
+async function adminLogin() {
+  const username = document.getElementById('adm-user').value.trim();
+  const password = document.getElementById('adm-pass').value;
+  const errEl    = document.getElementById('login-error');
+  errEl.textContent = '';
+  try {
+    const r = await fetch('/api/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Login failed.'; return; }
+    adminToken = d.token;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('topbar-user').textContent = 'Logged in as: ' + username;
+    loadAll();
+  } catch(e) {
+    errEl.textContent = 'Server se connect nahi ho saka.';
+  }
+}
+
+function logout() {
+  adminToken = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+/* ── SECTION NAV ── */
+function showSec(sec) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  document.getElementById('nav-' + sec).classList.add('active');
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ── LOAD ALL ── */
+async function loadAll() {
+  await Promise.all([loadStats(), loadUsers(), loadResults()]);
+}
+
+/* ── STATS ── */
+async function loadStats() {
+  try {
+    const r = await fetch('/api/admin/stats', {headers: authH()});
+    if (r.status === 401) { logout(); return; }
+    const d = await r.json();
+    if (!d.success) return;
+    const s = d.stats;
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${s.totalUsers}</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card"><div class="stat-num">${s.totalResults}</div><div class="stat-label">Total Tests</div></div>
+      <div class="stat-card"><div class="stat-num g">${s.completedAll}</div><div class="stat-label">All 10 Levels Done</div></div>
+      <div class="stat-card"><div class="stat-num y">${s.startedOnly}</div><div class="stat-label">Started Only</div></div>
+      <div class="stat-card"><div class="stat-num">${s.avgWpm} wpm</div><div class="stat-label">Avg WPM</div></div>
+      <div class="stat-card"><div class="stat-num g">${s.avgAcc}%</div><div class="stat-label">Avg Accuracy</div></div>
+      <div class="stat-card"><div class="stat-num">${s.activeToday}</div><div class="stat-label">Active Today</div></div>
+      <div class="stat-card"><div class="stat-num">${s.recentSignups}</div><div class="stat-label">New This Week</div></div>`;
+
+    const maxCount = Math.max(...s.levelCounts.map(l => l.count), 1);
+    document.getElementById('level-bars').innerHTML = s.levelCounts.map(l => `
+      <div class="bar-row">
+        <div class="bl">Level ${l.level}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(l.count/maxCount*100).toFixed(0)}%"></div></div>
+        <div class="bar-count">${l.count}</div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('stats-grid').innerHTML = '<div class="loading" style="color:var(--red)">Stats load nahi hue.</div>';
+  }
+}
+
+/* ── USERS ── */
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/admin/users', {headers: authH()});
+    if (r.status === 401) { logout(); return; }
+    const d = await r.json();
+    if (!d.success) { showUsersError('Server error.'); return; }
+    allUsers = d.users;
+    renderUsers(allUsers);
+  } catch(e) {
+    showUsersError('Load error: ' + e.message);
+  }
+}
+
+function showUsersError(msg) {
+  document.getElementById('users-tbody').innerHTML =
+    `<tr><td colspan="9" class="loading" style="color:var(--red)">${msg}</td></tr>`;
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">Koi user nahi mila.</td></tr>'; return; }
+  tbody.innerHTML = users.map((u, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><strong>${u.name}</strong></td>
+      <td style="color:var(--muted);font-size:.8rem">${u.email}</td>
+      <td style="font-family:monospace;font-size:.78rem;color:var(--accent2)">••••••••</td>
+      <td style="font-size:.8rem">${fmt(u.createdAt)}</td>
+      <td>${u.totalTests}</td>
+      <td style="font-family:monospace">${u.bestWpm} wpm</td>
+      <td><span class="pill pill-y">${u.levelsCompleted}/10</span></td>
+      <td>
+        <button class="btn-sm btn-w" onclick="openResetModal('${u.id}','${u.name.replace(/'/g,"\\'")}')">🔑 Reset PW</button>
+        <button class="btn-sm btn-d" onclick="deleteUser('${u.id}','${u.name.replace(/'/g,"\\'")}')">🗑 Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)));
+}
+
+/* ── RESULTS ── */
+async function loadResults() {
+  try {
+    const r = await fetch('/api/admin/results', {headers: authH()});
+    if (r.status === 401) { logout(); return; }
+    const d = await r.json();
+    if (!d.success) { showResultsError('Server error.'); return; }
+    allResults = d.results;
+    renderResults(allResults);
+  } catch(e) {
+    showResultsError('Load error: ' + e.message);
+  }
+}
+
+function showResultsError(msg) {
+  document.getElementById('results-tbody').innerHTML =
+    `<tr><td colspan="9" class="loading" style="color:var(--red)">${msg}</td></tr>`;
+}
+
+function renderResults(results) {
+  const tbody = document.getElementById('results-tbody');
+  if (!results.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">Koi result nahi mila.</td></tr>'; return; }
+  tbody.innerHTML = results.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><div style="font-weight:600">${r.userName}</div>
+          <div style="color:var(--muted);font-size:.75rem">${r.userEmail}</div></td>
+      <td><span class="pill pill-y">L${r.level}</span></td>
+      <td style="font-family:monospace;font-weight:700">${r.wpm} wpm</td>
+      <td style="font-family:monospace">${r.accuracy}%</td>
+      <td style="color:var(--accent2)">${r.correctWords}</td>
+      <td style="color:var(--red)">${r.wrongWords}</td>
+      <td style="font-family:monospace">${r.timeTaken ? r.timeTaken.toFixed(1) : '—'}s</td>
+      <td style="font-size:.78rem;color:var(--muted)">${fmt(r.completedAt)}</td>
+    </tr>`).join('');
+}
+
+function filterResults() {
+  const q = document.getElementById('result-search').value.toLowerCase();
+  renderResults(allResults.filter(r =>
+    r.userName.toLowerCase().includes(q) || r.userEmail.toLowerCase().includes(q)));
+}
+
+/* ── DELETE USER ── */
+async function deleteUser(id, name) {
+  if (!confirm(`"${name}" ko delete karna chahte ho? Uske saare results bhi delete honge.`)) return;
+  try {
+    const r = await fetch(`/api/admin/users/${id}`, {method:'DELETE', headers: authH()});
+    const d = await r.json();
+    toast(d.message || (d.success ? 'Done!' : 'Error'), d.success ? 'ok' : 'err');
+    if (d.success) { await loadUsers(); await loadResults(); await loadStats(); }
+  } catch(e) { toast('Delete nahi hua.', 'err'); }
+}
+
+/* ── RESET PASSWORD MODAL ── */
+function openResetModal(id, name) {
+  resetTargetId = id;
+  document.getElementById('reset-modal-name').textContent = 'User: ' + name;
+  document.getElementById('reset-pw-input').value = '';
+  document.getElementById('reset-modal-notice').innerHTML = '';
+  document.getElementById('reset-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('reset-modal').classList.remove('open');
+}
+
+async function doResetPw() {
+  const pw = document.getElementById('reset-pw-input').value.trim();
+  const noticeEl = document.getElementById('reset-modal-notice');
+  if (!pw || pw.length < 4) {
+    noticeEl.innerHTML = '<div class="modal-notice notice-err">Password 4+ characters ka hona chahiye.</div>';
+    return;
+  }
+  try {
+    const r = await fetch(`/api/admin/users/${resetTargetId}/reset-password`, {
+      method:'PUT', headers: authH(), body: JSON.stringify({newPassword: pw})
+    });
+    const d = await r.json();
+    if (d.success) {
+      noticeEl.innerHTML = '<div class="modal-notice notice-ok">✅ Password reset ho gaya!</div>';
+      setTimeout(() => { closeModal(); loadUsers(); }, 1500);
+    } else {
+      noticeEl.innerHTML = `<div class="modal-notice notice-err">❌ ${d.message}</div>`;
+    }
+  } catch(e) { noticeEl.innerHTML = '<div class="modal-notice notice-err">❌ Server error.</div>'; }
+}
+
+/* ── EVENT LISTENERS ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none')
+    adminLogin();
+});
+document.getElementById('reset-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
